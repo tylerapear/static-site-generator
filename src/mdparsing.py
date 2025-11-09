@@ -1,7 +1,8 @@
 import re
 from enum import Enum
 
-from textnode import TextType, TextNode
+from textnode import TextType, TextNode, text_nodes_to_html_nodes
+from htmlnode import ParentNode, LeafNode
 
 class BlockType(Enum):
     PARAGRAPH = "paragraph"
@@ -12,6 +13,7 @@ class BlockType(Enum):
     ORDERED_LIST = "ordered_list"
     NORMAL = "normal"
     
+### Handle Inline Mardown TextNodes ###
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
@@ -101,6 +103,8 @@ def split_nodes_link(old_nodes):
                 
     return new_nodes
 
+### Convert Text to Nodes and Blocks ###
+
 def text_to_textnodes(text):
     original_node = TextNode(text, TextType.PLAIN)
     return (
@@ -116,6 +120,11 @@ def text_to_textnodes(text):
             ), "**", TextType.BOLD
         )
     )
+    
+def text_to_html_nodes(text):
+    text_nodes = text_to_textnodes(text)
+    html_nodes = text_nodes_to_html_nodes(text_nodes)
+    return html_nodes
     
 def markdown_to_blocks(markdown):
     blocks = markdown.strip().split("\n\n")
@@ -150,3 +159,57 @@ def block_to_block_type(block):
                 break
    
     return blocktype
+
+### Convert Markdown Text to HTML Nodes
+
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    child_nodes = []
+    for block in blocks:
+        blocktype = block_to_block_type(block)
+        child_nodes.append(get_block_to_html_function(blocktype)(block, block[0]))
+    return ParentNode("div", child_nodes)
+        
+                
+def get_block_to_html_function(blocktype):
+    match blocktype:
+            case BlockType.HEADING:
+                return block_to_html_heading
+            case BlockType.CODE:
+                return block_to_html_code
+            case BlockType.QUOTE:
+                return block_to_html_quote
+            case BlockType.UNORDERED_LIST:
+                return block_to_html_list
+            case BlockType.ORDERED_LIST:
+                return block_to_html_list
+            case BlockType.NORMAL:
+                return block_to_html_normal
+
+def block_to_html_heading(block, *args):
+    stripped_block = ""
+    heading_size = 0
+    for i in range(6):
+        if block[i] == "#":
+            heading_size += 1
+            stripped_block = block[i+1:]
+        else:
+            break
+    html_child_nodes = text_to_html_nodes(stripped_block)
+    return ParentNode(f"h{heading_size}", html_child_nodes)
+
+def block_to_html_code(block, *args):
+    stripped_block = block[3:-3]
+    return ParentNode("pre", [LeafNode("code", stripped_block)])
+
+def block_to_html_quote(block, *args):
+    stripped_block = block[1:]
+    html_child_nodes = text_to_html_nodes(stripped_block)
+    return ParentNode(f"blockquote", html_child_nodes)
+
+def block_to_html_list(block, first_char):
+    list_item_elements = list(map(lambda line: ParentNode("li", text_to_html_nodes(line[2:])), block.split("\n")))
+    return ParentNode("ul" if first_char == "-" else "ol", list_item_elements)
+
+def block_to_html_normal(block, *args):
+    return LeafNode("p", block)

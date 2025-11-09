@@ -16,14 +16,20 @@ class TestHTMLNode(unittest.TestCase):
         node = HTMLNode(props={"color": "red", "font": "arial"})
         self.assertEqual(node.props_to_html(), ' color="red" font="arial"')
     
+    def test_eq(self):
+        node1 = ParentNode("h1", [LeafNode(None, "This is a "), LeafNode("b", "bold"), LeafNode(None, " text")], props={"color": "red"})
+        node2 = ParentNode("h1", [LeafNode(None, "This is a "), LeafNode("b", "bold"), LeafNode(None, " text")], props={"color": "red"})
+        self.assertEqual(node1, node2)
+    
     def test_repr(self):
         childNode = HTMLNode()
         props = {"color": "red"}
         node = HTMLNode(tag="h1", value="testval", children=[childNode], props=props)
         self.assertEqual(
             repr(node), 
-            "HTMLNode(tag=h1, value=testval, children=[HTMLNode(tag=None, value=None, children=None, props=None)], props={'color': 'red'})"
+            "HTMLNode(tag='h1', value='testval', children=[HTMLNode(tag='None', value='None', children=None, props=None)], props={'color': 'red'})"
         )
+        
         
     ### Test LeafNode
         
@@ -31,7 +37,7 @@ class TestHTMLNode(unittest.TestCase):
         node = LeafNode("p", "Hello World!", {"color": "red"})
         self.assertEqual(
             repr(node),
-            "LeafNode(tag=p, value=Hello World!, props={'color': 'red'})"
+            "LeafNode(tag='p', value='Hello World!', props={'color': 'red'})"
         )
     
     def test_leaf_to_html_p(self):

@@ -1,16 +1,6 @@
 import unittest
 
-from mdparsing import (
-    BlockType,
-    split_nodes_delimiter, 
-    extract_markdown_images, 
-    extract_markdown_links, 
-    split_nodes_image, 
-    split_nodes_link, 
-    text_to_textnodes, 
-    markdown_to_blocks,
-    block_to_block_type
-)
+from mdparsing import *
 from textnode import TextNode, TextType
 
 class TestMDParsing(unittest.TestCase):
@@ -206,6 +196,8 @@ class TestMDParsing(unittest.TestCase):
             new_nodes,
         )
         
+        
+class TestMDToHTML(unittest.TestCase):
     def test_text_to_textnodes(self):
         self.assertEqual(
             text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"),
@@ -220,6 +212,25 @@ class TestMDParsing(unittest.TestCase):
                 TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
                 TextNode(" and a ", TextType.PLAIN),
                 TextNode("link", TextType.LINK, "https://boot.dev"),
+            ]
+        )
+        
+    def test_text_to_html_nodes(self):
+        self.maxDiff = None
+        text = "This is **a bold** _italic_ `codely` line with an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        self.assertEqual(
+            text_to_html_nodes(text),
+            [
+                LeafNode(None, "This is "),
+                LeafNode("b", "a bold"),
+                LeafNode(None, " "),
+                LeafNode("i", "italic"),
+                LeafNode(None, " "),
+                LeafNode("code", "codely"),
+                LeafNode(None, " line with an "),
+                LeafNode("img", "", {"src": "https://i.imgur.com/fJRm4Vk.jpeg", "alt": "obi wan image"}),
+                LeafNode(None, " and a "),
+                LeafNode("a", "link", {"href": "https://boot.dev"}),
             ]
         )
         
@@ -297,4 +308,109 @@ This is the same paragraph on a new line
         self.assertEqual(block_to_block_type(block1), BlockType.ORDERED_LIST)
         self.assertEqual(block_to_block_type(block2), BlockType.ORDERED_LIST)
         self.assertEqual(block_to_block_type(block3), BlockType.NORMAL)
+    
+    
+    def test_block_to_html_heading(self):
+        self.maxDiff = None
+        block1 = "#This is just a heading1"
+        block3 = "###This is just a **bold** heading3"
+        block6 = "######This is just a heading6"
+        block7 = "#######This is just a heading6"
+        htmlnode1 = block_to_html_heading(block1)
+        htmlnode3 = block_to_html_heading(block3)
+        htmlnode6 = block_to_html_heading(block6)
+        htmlnode7 = block_to_html_heading(block7)
+        self.assertEqual(
+            htmlnode1,
+            ParentNode("h1", [LeafNode(None, "This is just a heading1")])
+        )
+        self.assertEqual(
+            htmlnode3,
+            ParentNode("h3", [
+                LeafNode(None, "This is just a "),
+                LeafNode("b", "bold"),
+                LeafNode(None, " heading3")
+            ])
+        )
+        self.assertEqual(
+            htmlnode6,
+            ParentNode("h6", [LeafNode(None, "This is just a heading6")])
+        )
+        self.assertEqual(
+            htmlnode7,
+            ParentNode("h6", [LeafNode(None, "#This is just a heading6")])
+        )
         
+    def test_block_to_html_code(self):
+        block = "```print('this **is** code')```"
+        htmlnode = block_to_html_code(block)
+        self.assertEqual(
+            htmlnode,
+            ParentNode("pre", [LeafNode("code", "print('this **is** code')")])
+        )
+        
+    def test_block_to_html_quote(self):
+        block = ">This is a quote"
+        block2 = ">This is a **bold** quote"
+        htmlnode = block_to_html_quote(block)
+        htmlnode2 = block_to_html_quote(block2)
+        self.assertEqual(
+            htmlnode,
+            ParentNode("blockquote", [
+                LeafNode(None, "This is a quote")
+            ])
+        )
+        self.assertEqual(
+            htmlnode2,
+            ParentNode("blockquote", [
+                LeafNode(None, "This is a "),
+                LeafNode("b", "bold"),
+                LeafNode(None, " quote")
+            ])
+        )
+        
+    def test_block_to_html_unordered_list(self):
+        self.maxDiff = None
+        block = """- item 1
+- item _uh_ 2
+- item 3"""
+        htmlnode = block_to_html_list(block, "-")
+        self.assertEqual(
+            htmlnode,
+            ParentNode("ul", [
+                ParentNode("li", [LeafNode(None, "item 1")]),
+                ParentNode("li", [
+                    LeafNode(None, "item "),
+                    LeafNode("i", "uh"),
+                    LeafNode(None, " 2")
+                ]),
+                ParentNode("li", [LeafNode(None, "item 3")])
+            ])
+        )
+        
+    def test_block_to_html_ordered_list(self):
+        self.maxDiff = None
+        block = """. item 1
+. item _uh_ 2
+. item 3"""
+        htmlnode = block_to_html_list(block, ".")
+        self.assertEqual(
+            htmlnode,
+            ParentNode("ol", [
+                ParentNode("li", [LeafNode(None, "item 1")]),
+                ParentNode("li", [
+                    LeafNode(None, "item "),
+                    LeafNode("i", "uh"),
+                    LeafNode(None, " 2")
+                ]),
+                ParentNode("li", [LeafNode(None, "item 3")])
+            ])
+        )
+        
+    def test_block_to_html_normal(self):
+        block = "This is just a little text"
+        htmlnode = block_to_html_normal(block)
+        self.assertEqual(
+            htmlnode,
+            LeafNode("p", "This is just a little text")
+        )
