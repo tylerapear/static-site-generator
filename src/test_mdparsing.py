@@ -408,9 +408,15 @@ This is the same paragraph on a new line
         )
         
     def test_block_to_html_normal(self):
-        block = "This is just a little text"
+        block = "This **is** just a _little_ text"
         htmlnode = block_to_html_normal(block)
         self.assertEqual(
             htmlnode,
-            LeafNode("p", "This is just a little text")
+            ParentNode("p", [
+                LeafNode(None, "This "),
+                LeafNode("b", "is"),
+                LeafNode(None, " just a "),
+                LeafNode("i", "little"),
+                LeafNode(None, " text")
+            ])
         )

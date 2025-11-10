@@ -212,4 +212,5 @@ def block_to_html_list(block, first_char):
     return ParentNode("ul" if first_char == "-" else "ol", list_item_elements)
 
 def block_to_html_normal(block, *args):
-    return LeafNode("p", block)
+    html_child_nodes = text_to_html_nodes(block)
+    return ParentNode(f"p", html_child_nodes)
