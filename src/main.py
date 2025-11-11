@@ -1,11 +1,16 @@
-import os, shutil
+import os, shutil, sys
 
 from pathlib import Path
 from textnode import TextNode, TextType
 from mdparsing import markdown_to_html_node
 
+if len(sys.argv) > 1:
+    basepath = sys.argv[1]
+else:
+    basepath = "/"
+
 dir_path_static = "./static"
-dir_path_public = "./public"
+dir_path_public = "./docs"
 dir_path_content = "./content"
 template_path = "./template.html"
 
@@ -15,7 +20,7 @@ def main():
         shutil.rmtree(dir_path_public)
     
     deep_copy_directory(dir_path_static, dir_path_public)
-    generate_all_pages_in_dir(dir_path_content, template_path, dir_path_public)
+    generate_all_pages_in_dir(basepath, dir_path_content, template_path, dir_path_public)
     
 def deep_copy_directory(source_path, dest_path):
     if os.path.exists(dest_path):
@@ -36,7 +41,7 @@ def extract_title(markdown):
             return line[1:].strip()
     raise Exception("File does not contain a header line")
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(basepath, from_path, template_path, dest_path):
     print(f"\n\033[33mGenerating page from {from_path} to {dest_path} using {template_path}\033[0m\n")
     from_content = ""
     with open(from_path) as file:
@@ -46,21 +51,21 @@ def generate_page(from_path, template_path, dest_path):
         template_content = file.read()
     html_text = markdown_to_html_node(from_content).to_html()
     title = extract_title(from_content)
-    template_content = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html_text)
+    template_content = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html_text).replace('href="/', f'href="{basepath}').replace('src="/', f'src="{basepath}')
     path = Path(dest_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(template_content)
     
-def generate_all_pages_in_dir(from_path, template_path, dest_path):
+def generate_all_pages_in_dir(basepath, from_path, template_path, dest_path):
     contents = os.listdir(from_path)
     for item in contents:
         item_from_path = os.path.join(from_path, item)
         item_dest_path = os.path.join(dest_path, item)
         if os.path.isfile(item_from_path):
             item_dest_path = Path(item_dest_path).with_suffix(".html")
-            generate_page(item_from_path, template_path, item_dest_path)
+            generate_page(basepath, item_from_path, template_path, item_dest_path)
         else:
-            generate_all_pages_in_dir(item_from_path, template_path, item_dest_path)
+            generate_all_pages_in_dir(basepath, item_from_path, template_path, item_dest_path)
         
 
 if __name__ == "__main__":
