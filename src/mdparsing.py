@@ -151,12 +151,15 @@ def block_to_block_type(block):
             blocktype = BlockType.NORMAL
             break
     if blocktype == BlockType.NORMAL:
-        for line in lines:
-            if line[:2] == ". ":
-                blocktype = BlockType.ORDERED_LIST
-            else:
-                blocktype = BlockType.NORMAL
-                break
+        if block.startswith("1. "):
+            i = 1
+            for line in lines:
+                if line.startswith(f"{i}. "):
+                    blocktype = BlockType.ORDERED_LIST
+                else:
+                    blocktype = BlockType.NORMAL
+                    break
+                i += 1
    
     return blocktype
 
@@ -192,25 +195,25 @@ def block_to_html_heading(block, *args):
     for i in range(6):
         if block[i] == "#":
             heading_size += 1
-            stripped_block = block[i+1:]
+            stripped_block = block[i+1:].strip()
         else:
             break
     html_child_nodes = text_to_html_nodes(stripped_block)
     return ParentNode(f"h{heading_size}", html_child_nodes)
 
 def block_to_html_code(block, *args):
-    stripped_block = block[3:-3]
+    stripped_block = block[3:-3].strip()
     return ParentNode("pre", [LeafNode("code", stripped_block)])
 
 def block_to_html_quote(block, *args):
-    stripped_block = block[1:]
+    stripped_block = block[1:].strip()
     html_child_nodes = text_to_html_nodes(stripped_block)
     return ParentNode(f"blockquote", html_child_nodes)
 
 def block_to_html_list(block, first_char):
-    list_item_elements = list(map(lambda line: ParentNode("li", text_to_html_nodes(line[2:])), block.split("\n")))
+    list_item_elements = list(map(lambda line: ParentNode("li", text_to_html_nodes(line[2:].strip())), block.split("\n")))
     return ParentNode("ul" if first_char == "-" else "ol", list_item_elements)
 
 def block_to_html_normal(block, *args):
-    html_child_nodes = text_to_html_nodes(block)
+    html_child_nodes = text_to_html_nodes(block.strip())
     return ParentNode(f"p", html_child_nodes)

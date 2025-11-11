@@ -300,10 +300,10 @@ This is the same paragraph on a new line
         self.assertEqual(block_to_block_type(block3), BlockType.NORMAL)
         
     def test_block_type_ordered_list(self):
-        block1 = ". ordered list"
-        block2 = """. ordered
-. list"""
-        block3 = """. Not
+        block1 = "1. ordered list"
+        block2 = """1. ordered
+2. list"""
+        block3 = """1. Not
 - a list"""
         self.assertEqual(block_to_block_type(block1), BlockType.ORDERED_LIST)
         self.assertEqual(block_to_block_type(block2), BlockType.ORDERED_LIST)

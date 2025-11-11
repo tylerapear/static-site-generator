@@ -4,20 +4,30 @@ from pathlib import Path
 from textnode import TextNode, TextType
 from mdparsing import markdown_to_html_node
 
+dir_path_static = "./static"
+dir_path_public = "./public"
+dir_path_content = "./content"
+template_path = "./template.html"
+
 def main():
-    deep_copy_directory("static", "public")
-    generate_page("content/index.md", "template.html", "public/index.html")
+    print("\n\033[33mDeleting public directory...\033[0m\n")
+    if os.path.exists(dir_path_public):
+        shutil.rmtree(dir_path_public)
     
+    deep_copy_directory(dir_path_static, dir_path_public)
+    generate_all_pages_in_dir(dir_path_content, template_path, dir_path_public)
     
 def deep_copy_directory(source_path, dest_path):
     if os.path.exists(dest_path):
         shutil.rmtree(dest_path)
     os.mkdir(dest_path)
     for item in os.listdir(source_path):
-        if os.path.isfile(f"{source_path}/{item}"):
-            shutil.copy(f"{source_path}/{item}", dest_path)
+        item_source_path = os.path.join(source_path, item)
+        item_dest_path = os.path.join(dest_path, item)
+        if os.path.isfile(item_source_path):
+            shutil.copy(item_source_path, dest_path)
         else:
-            deep_copy_directory(f"{source_path}/{item}", f"{dest_path}/{item}")
+            deep_copy_directory(item_source_path, item_dest_path)
             
 def extract_title(markdown):
     lines = markdown.split("\n")
@@ -41,7 +51,16 @@ def generate_page(from_path, template_path, dest_path):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(template_content)
     
-    
+def generate_all_pages_in_dir(from_path, template_path, dest_path):
+    contents = os.listdir(from_path)
+    for item in contents:
+        item_from_path = os.path.join(from_path, item)
+        item_dest_path = os.path.join(dest_path, item)
+        if os.path.isfile(item_from_path):
+            item_dest_path = Path(item_dest_path).with_suffix(".html")
+            generate_page(item_from_path, template_path, item_dest_path)
+        else:
+            generate_all_pages_in_dir(item_from_path, template_path, item_dest_path)
         
 
 if __name__ == "__main__":
