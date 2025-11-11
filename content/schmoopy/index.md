@@ -1,6 +1,6 @@
 # Schmoopy being silly
 
-[schmoopy](/images/schmoopy.jpg)
+![schmoopy](/images/schmoopy.jpg)
 
 This is _schmoopy_ being **very** silly
 
