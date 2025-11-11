@@ -2,7 +2,7 @@
 
 ![JRR Tolkien sitting](/images/tolkien.png)
 
-[link to schmoopy](/shmoopy)
+[link to schmoopy](/schmoopy)
 
 Here's the deal, **I like Tolkien**.
 
